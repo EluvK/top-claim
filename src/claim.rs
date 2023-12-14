@@ -31,19 +31,12 @@ impl ClaimReward {
             let cmd = crate::cmd::TopioCommands::new(&group.topio_user, &group.topio_package_dir);
             let pswd = &group.mining_pswd_enc;
             for ac in &group.accounts {
-                let r = cmd.query_reward(&ac.address)?;
-                if r.data.unclaimed > group.minimum_claim_value * 1_000_000 {
-                    cmd.claim_reward(&ac.address, pswd)?;
-                }
-                if !ac
-                    .address
-                    .eq_ignore_ascii_case(&group.balance_target_address)
-                {
-                    let balance = cmd.get_balance(&ac.address, pswd)?;
-                    if balance > 100 {
-                        cmd.transfer(&group.balance_target_address, balance - 100)?;
-                    }
-                }
+                cmd.collect_reward(
+                    &ac.address,
+                    pswd,
+                    group.minimum_claim_value,
+                    &group.balance_target_address,
+                )?;
             }
         }
         Ok(())

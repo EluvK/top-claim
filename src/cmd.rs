@@ -19,7 +19,30 @@ impl TopioCommands {
         }
     }
 
-    pub fn set_default_account(&self, address: &str, pswd: &str) -> anyhow::Result<Output> {
+    pub fn collect_reward(
+        &self,
+        address: &str,
+        pswd: &str,
+        minimum_claim_value: u64,
+        to_address: &str,
+    ) -> anyhow::Result<()> {
+        let r = self.query_reward(address)?;
+        if r.data.unclaimed > minimum_claim_value {
+            self.set_default_account(address, pswd)?;
+            let r = self.claim_reward()?;
+            println!("claim_reward: {:?}", r);
+            if !address.eq_ignore_ascii_case(to_address) {
+                let balance = self.get_balance()?;
+                if balance > 100 {
+                    self.transfer(to_address, balance - 100)?;
+                    println!("transfer {} to {}", balance - 100, to_address);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn set_default_account(&self, address: &str, pswd: &str) -> anyhow::Result<Output> {
         let cmd_str = format!(
             r#"cd {} && topio wallet setDefaultAccount {}"#,
             &self.exec_dir, address
@@ -46,7 +69,7 @@ impl TopioCommands {
     }
 
     // reward
-    pub fn query_reward(&self, address: &str) -> anyhow::Result<RewardInfoResp> {
+    fn query_reward(&self, address: &str) -> anyhow::Result<RewardInfoResp> {
         let cmd_str = format!(
             r#"cd {} && topio mining queryMinerReward {} "#,
             &self.exec_dir, address
@@ -62,8 +85,7 @@ impl TopioCommands {
         Ok(serde_json::from_str(std::str::from_utf8(&output.stdout)?)?)
     }
 
-    pub fn claim_reward(&self, address: &str, pswd: &str) -> anyhow::Result<Output> {
-        _ = self.set_default_account(address, pswd)?;
+    fn claim_reward(&self) -> anyhow::Result<Output> {
         let cmd_str = format!(r#"cd {} && topio mining claimMinerReward"#, &self.exec_dir);
         let c = Command::new("sudo")
             .args(["-u", &self.operator_user])
@@ -76,8 +98,7 @@ impl TopioCommands {
         Ok(output)
     }
 
-    pub fn get_balance(&self, address: &str, pswd: &str) -> anyhow::Result<u64> {
-        _ = self.set_default_account(address, pswd)?;
+    fn get_balance(&self) -> anyhow::Result<u64> {
         let cmd_str = String::from(
             r#"topio wallet listAccounts | head -n 5 | grep 'balance' | awk -F ' ' '{print $2}' "#,
         );
@@ -97,7 +118,7 @@ impl TopioCommands {
         Ok(v)
     }
 
-    pub fn transfer(&self, to_address: &str, amount: u64) -> anyhow::Result<Output> {
+    fn transfer(&self, to_address: &str, amount: u64) -> anyhow::Result<Output> {
         let cmd_str = format!(
             r#"cd {} && topio transfer {} {}"#,
             &self.exec_dir, to_address, amount
