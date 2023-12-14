@@ -26,7 +26,7 @@ impl TopioCommands {
         );
         let mut command = Command::new("sudo")
             .args(["-u", &self.operator_user])
-            .args(["sh", "-c"])
+            .args(["/bin/bash", "-c"])
             .arg(cmd_str)
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
@@ -53,7 +53,7 @@ impl TopioCommands {
         );
         let c = Command::new("sudo")
             .args(["-u", &self.operator_user])
-            .args(["sh", "-c"])
+            .args(["/bin/bash", "-c"])
             .arg(cmd_str)
             .stdout(std::process::Stdio::piped())
             .spawn()?;
@@ -67,7 +67,7 @@ impl TopioCommands {
         let cmd_str = format!(r#"cd {} && topio mining claimMinerReward"#, &self.exec_dir);
         let c = Command::new("sudo")
             .args(["-u", &self.operator_user])
-            .args(["sh", "-c"])
+            .args(["/bin/bash", "-c"])
             .arg(cmd_str)
             .stdout(std::process::Stdio::piped())
             .spawn()?;
@@ -83,7 +83,7 @@ impl TopioCommands {
         );
         let c = Command::new("sudo")
             .args(["-u", &self.operator_user])
-            .args(["sh", "-c"])
+            .args(["/bin/bash", "-c"])
             .arg(cmd_str)
             .stdout(std::process::Stdio::piped())
             .spawn()?;
@@ -104,7 +104,7 @@ impl TopioCommands {
         );
         let c = Command::new("sudo")
             .args(["-u", &self.operator_user])
-            .args(["sh", "-c"])
+            .args(["/bin/bash", "-c"])
             .arg(cmd_str)
             .stdout(std::process::Stdio::piped())
             .spawn()?;
