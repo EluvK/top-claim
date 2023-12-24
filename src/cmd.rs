@@ -26,17 +26,18 @@ impl TopioCommands {
         minimum_claim_value: u64,
         to_address: &str,
     ) -> anyhow::Result<()> {
+        self.set_default_account(address, pswd)?;
         let r = self.query_reward(address)?;
         if r.data.unclaimed > minimum_claim_value {
-            self.set_default_account(address, pswd)?;
             let r = self.claim_reward()?;
             println!("claim_reward: {:?}", r);
-            if !address.eq_ignore_ascii_case(to_address) {
-                let balance = self.get_balance()?;
-                if balance > 100 {
-                    self.transfer(to_address, balance - 100)?;
-                    println!("transfer {} to {}", balance - 100, to_address);
-                }
+            std::thread::sleep(std::time::Duration::from_secs(5));
+        }
+        if !address.eq_ignore_ascii_case(to_address) {
+            let balance = self.get_balance()?;
+            if balance > 100 {
+                self.transfer(to_address, balance - 100)?;
+                println!("transfer {} to {}", balance - 100, to_address);
             }
         }
         Ok(())
@@ -48,9 +49,7 @@ impl TopioCommands {
             &self.exec_dir, address
         );
         let mut command = Command::new("sudo")
-            .args(["-u", &self.operator_user])
-            .args(["/bin/bash", "-c"])
-            .arg(cmd_str)
+            .args(["-u", &self.operator_user, "/bin/bash", "-c", &cmd_str])
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .spawn()?;
@@ -75,9 +74,7 @@ impl TopioCommands {
             &self.exec_dir, address
         );
         let c = Command::new("sudo")
-            .args(["-u", &self.operator_user])
-            .args(["/bin/bash", "-c"])
-            .arg(cmd_str)
+            .args(["-u", &self.operator_user, "/bin/bash", "-c", &cmd_str])
             .stdout(std::process::Stdio::piped())
             .spawn()?;
 
@@ -88,9 +85,7 @@ impl TopioCommands {
     fn claim_reward(&self) -> anyhow::Result<Output> {
         let cmd_str = format!(r#"cd {} && topio mining claimMinerReward"#, &self.exec_dir);
         let c = Command::new("sudo")
-            .args(["-u", &self.operator_user])
-            .args(["/bin/bash", "-c"])
-            .arg(cmd_str)
+            .args(["-u", &self.operator_user, "/bin/bash", "-c", &cmd_str])
             .stdout(std::process::Stdio::piped())
             .spawn()?;
 
@@ -103,9 +98,7 @@ impl TopioCommands {
             r#"topio wallet listAccounts | head -n 5 | grep 'balance' | awk -F ' ' '{print $2}' "#,
         );
         let c = Command::new("sudo")
-            .args(["-u", &self.operator_user])
-            .args(["/bin/bash", "-c"])
-            .arg(cmd_str)
+            .args(["-u", &self.operator_user, "/bin/bash", "-c", &cmd_str])
             .stdout(std::process::Stdio::piped())
             .spawn()?;
 
@@ -124,9 +117,7 @@ impl TopioCommands {
             &self.exec_dir, to_address, amount
         );
         let c = Command::new("sudo")
-            .args(["-u", &self.operator_user])
-            .args(["/bin/bash", "-c"])
-            .arg(cmd_str)
+            .args(["-u", &self.operator_user, "/bin/bash", "-c", &cmd_str])
             .stdout(std::process::Stdio::piped())
             .spawn()?;
 
